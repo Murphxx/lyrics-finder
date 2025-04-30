@@ -1,118 +1,114 @@
-// Theme toggle functionality
 const themeToggle = document.querySelector('.theme-toggle');
 const body = document.body;
+const artistInput = document.getElementById('artist');
+const songInput = document.getElementById('song');
+const resultDiv = document.getElementById('result');
+const lyricsDiv = document.getElementById('lyrics');
+const songTitle = document.getElementById('song-title');
+const artistName = document.getElementById('artist-name');
+const errorMessage = document.querySelector('.error-message');
+const loadingSpinner = document.querySelector('.loading-spinner');
+const recentList = document.getElementById('recent-list');
 
 themeToggle.addEventListener('click', () => {
     body.classList.toggle('dark-mode');
     const icon = themeToggle.querySelector('i');
     icon.classList.toggle('fa-moon');
     icon.classList.toggle('fa-sun');
-    
-    // Save theme preference
-    localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
 });
 
-// Load saved theme preference
-if (localStorage.getItem('darkMode') === 'true') {
-    body.classList.add('dark-mode');
-    themeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
-}
+// Load recent searches
+document.addEventListener('DOMContentLoaded', () => {
+    loadRecentSearches();
+});
 
-// Recent searches functionality
-let recentSearches = JSON.parse(localStorage.getItem('recentSearches')) || [];
-const recentList = document.getElementById('recent-list');
+function getLyrics() {
+    const artist = artistInput.value.trim();
+    const song = songInput.value.trim();
 
-function updateRecentSearches(artist, song) {
-    const search = `${artist} - ${song}`;
-    if (!recentSearches.includes(search)) {
-        recentSearches.unshift(search);
-        recentSearches = recentSearches.slice(0, 5); // Keep only last 5 searches
-        localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
-        displayRecentSearches();
-    }
-}
-
-function displayRecentSearches() {
-    recentList.innerHTML = '';
-    recentSearches.forEach(search => {
-        const item = document.createElement('div');
-        item.className = 'recent-item';
-        item.textContent = search;
-        item.addEventListener('click', () => {
-            const [artist, song] = search.split(' - ');
-            document.getElementById('artist').value = artist;
-            document.getElementById('song').value = song;
-            getLyrics();
-        });
-        recentList.appendChild(item);
-    });
-}
-
-// Display initial recent searches
-displayRecentSearches();
-
-// Loading and error handling
-const loadingSpinner = document.querySelector('.loading-spinner');
-const errorMessage = document.querySelector('.error-message');
-const result = document.getElementById('result');
-
-function showLoading() {
-    loadingSpinner.style.display = 'block';
-    result.style.display = 'none';
-    errorMessage.style.display = 'none';
-}
-
-function hideLoading() {
-    loadingSpinner.style.display = 'none';
-}
-
-function showError() {
-    errorMessage.style.display = 'flex';
-    result.style.display = 'none';
-}
-
-function showResult() {
-    result.style.display = 'block';
-    errorMessage.style.display = 'none';
-}
-
-// Main lyrics fetching function
-async function getLyrics() {
-    const artist = document.getElementById('artist').value.trim();
-    const song = document.getElementById('song').value.trim();
-    
     if (!artist || !song) {
-        showError();
+        showError('Please enter both artist and song name.');
         return;
     }
 
-    showLoading();
+    const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(song)}`;
     
-    try {
-        // CORS proxy kullanarak API çağrısı
-        const corsProxy = 'https://cors-anywhere.herokuapp.com/';
-        const apiUrl = `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(song)}`;
-        const response = await fetch(corsProxy + apiUrl, {
-            headers: {
-                'Origin': window.location.origin
+    showLoading(true);
+    hideResult();
+    hideError();
+
+    fetch(url)
+        .then(res => {
+            if (!res.ok) throw new Error('Lyrics not found.');
+            return res.json();
+        })
+        .then(data => {
+            if (data.lyrics) {
+                showLyrics(artist, song, data.lyrics);
+                addToRecentSearches(artist, song);
+            } else {
+                throw new Error('Lyrics not found.');
             }
+        })
+        .catch(() => {
+            showError('Lyrics not found. Please try again.');
+        })
+        .finally(() => {
+            showLoading(false);
         });
-        
-        const data = await response.json();
-        
-        if (data.lyrics) {
-            document.getElementById('song-title').textContent = song;
-            document.getElementById('artist-name').textContent = artist;
-            document.getElementById('lyrics').textContent = data.lyrics;
-            showResult();
-            updateRecentSearches(artist, song);
-        } else {
-            showError();
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showError();
-    } finally {
-        hideLoading();
-    }
-} 
+}
+
+function showLyrics(artist, title, lyrics) {
+    songTitle.textContent = title;
+    artistName.textContent = `by ${artist}`;
+    lyricsDiv.textContent = lyrics;
+    resultDiv.classList.add('active');
+}
+
+function showError(message) {
+    errorMessage.querySelector('p').textContent = message;
+    errorMessage.style.display = 'flex';
+}
+
+function hideError() {
+    errorMessage.style.display = 'none';
+}
+
+function showLoading(state) {
+    loadingSpinner.style.display = state ? 'block' : 'none';
+}
+
+function hideResult() {
+    resultDiv.classList.remove('active');
+}
+
+function addToRecentSearches(artist, song) {
+    const search = `${artist} - ${song}`;
+    let recent = JSON.parse(localStorage.getItem('recentSearches')) || [];
+
+    // Add new and remove duplicates
+    recent = [search, ...recent.filter(item => item !== search)].slice(0, 10);
+    localStorage.setItem('recentSearches', JSON.stringify(recent));
+    renderRecentSearches();
+}
+
+function loadRecentSearches() {
+    renderRecentSearches();
+}
+
+function renderRecentSearches() {
+    const recent = JSON.parse(localStorage.getItem('recentSearches')) || [];
+    recentList.innerHTML = '';
+    recent.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'recent-item';
+        div.textContent = item;
+        div.addEventListener('click', () => {
+            const [artist, song] = item.split(' - ');
+            artistInput.value = artist;
+            songInput.value = song;
+            getLyrics();
+        });
+        recentList.appendChild(div);
+    });
+}
