@@ -68,7 +68,7 @@ Bu proje MIT lisansı altında lisanslanmıştır. Daha fazla bilgi için `LICEN
 
 ## 👥 İletişim
 
-GitHub: [@kullaniciadi](https://github.com/Murphxx)
+GitHub: [@Murphxx](https://github.com/Murphxx)
 
 ## 🙏 Teşekkürler
 
