@@ -89,8 +89,15 @@ async function getLyrics() {
     showLoading();
     
     try {
-        // Replace this with your actual API call
-        const response = await fetch(`https://api.lyrics.ovh/v1/${artist}/${song}`);
+        // CORS proxy kullanarak API çağrısı
+        const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+        const apiUrl = `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(song)}`;
+        const response = await fetch(corsProxy + apiUrl, {
+            headers: {
+                'Origin': window.location.origin
+            }
+        });
+        
         const data = await response.json();
         
         if (data.lyrics) {
@@ -103,6 +110,7 @@ async function getLyrics() {
             showError();
         }
     } catch (error) {
+        console.error('Error:', error);
         showError();
     } finally {
         hideLoading();
