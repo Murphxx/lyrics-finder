@@ -10,7 +10,6 @@ Modern ve kullanıcı dostu bir şarkı sözü arama uygulaması. Sanatçı ve �
 - 📱 Mobil uyumlu tasarım
 - 📋 Son aramaları kaydetme
 - ⚡ Yükleme animasyonları
-- 🎯 Kullanıcı dostu hata mesajları
 
 ## 🚀 Kurulum
 
@@ -75,4 +74,3 @@ GitHub: [@kullaniciadi](https://github.com/Murphxx)
 
 - [Lyrics.ovh](https://lyrics.ovh) - API sağlayıcısı
 - [Font Awesome](https://fontawesome.com/) - İkonlar için
-- Tüm katkıda bulunanlara teşekkürler!
